@@ -1,0 +1,8 @@
+version: "3"
+
+tasks:
+  build-local:
+    desc: "Builds the image and loads it into the local kind cluster"
+    cmds:
+      - sh -c 'IMAGE_NAME=$(uuidgen | tr "[:upper:]" "[:lower:]") && docker build -t ttl.sh/${IMAGE_NAME}:2h . && docker push ttl.sh/${IMAGE_NAME}:2h && kind --name ilocal load docker-image ttl.sh/${IMAGE_NAME}:2h'
+    silent: true

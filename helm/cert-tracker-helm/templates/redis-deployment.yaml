@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "redis.fullname" . }}
+  namespace: {{ include "cert-tracker.namespace" . }}
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "redis.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "redis.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}
+          ports:
+            - containerPort: {{ .Values.redis.image.port }}
+          resources:
+            requests:
+              memory: "{{ .Values.redis.resources.requests.memory }}"
+              cpu: "{{ .Values.redis.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.redis.resources.limits.memory }}"
+              cpu: "{{ .Values.redis.resources.limits.cpu }}"
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999
+        runAsGroup: 999

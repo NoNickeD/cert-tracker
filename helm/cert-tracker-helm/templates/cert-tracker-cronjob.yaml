@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cert-tracker.fullname" . }}-check-job
+  namespace: {{ include "cert-tracker.namespace" . }}
+  labels:
+    {{- include "cert-tracker.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.checkjob.schedule }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: curl
+              image: {{ .Values.curl.repository }}:{{ .Values.curl.tag }}
+              command: ["curl"]
+              args: ["-X", "POST", "-H", "Content-Type: application/json", "-d", "@/domains/domains.json", "http://cert-tracker:8080/check"]
+              volumeMounts:
+                - name: domains-volume
+                  mountPath: /domains
+          restartPolicy: OnFailure
+          volumes:
+            - name: domains-volume
+              configMap:
+                name: {{ include "cert-tracker.fullname" . }}-domains-config

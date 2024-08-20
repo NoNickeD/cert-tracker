@@ -1,0 +1,71 @@
+@startuml
+title Cert-Tracker Microservice Architecture
+
+actor Client as client
+
+package "Cert-Tracker Service" {
+    package "HTTP Layer" {
+        component "API Gateway" as api
+        component "Security Middleware" as security
+        component "Rate Limiter" as rate_limiter
+    }
+
+    package "Certificate Processing" {
+        component "Domain Validator" as domain_validator
+        component "Certificate Handler" as cert_handler
+        component "Certificate Fetcher" as cert_fetcher
+    }
+
+    package "Resilience and Monitoring" {
+        component "Circuit Breaker" as circuit_breaker
+        component "Prometheus Metrics" as prometheus_metrics
+        component "OpenTelemetry Tracing" as tracing
+        component "Logger" as logger
+    }
+
+    package "Storage" {
+        component "Redis Cache" as redis_cache
+    }
+}
+
+cloud "Redis" as redis
+cloud "Prometheus" as prometheus
+
+' Client interactions with API
+client --> api : Requests via /check
+api --> security : Apply security headers
+security --> rate_limiter : Check rate limit
+rate_limiter --> api : Allow/Deny
+
+' Domain validation and certificate fetching
+api --> domain_validator : Validate domain(s)
+domain_validator --> api : Invalid domain(s)
+domain_validator --> cert_handler : Valid domain(s)
+
+cert_handler --> cert_fetcher : Fetch certificate(s) via TLS
+cert_fetcher --> cert_handler : Return certificate details
+
+' Cache lookup and updates
+cert_handler --> circuit_breaker : Check Redis availability
+circuit_breaker --> redis_cache : Retrieve from cache
+redis_cache --> redis : Query Redis for cached data
+redis --> redis_cache : Return cached data
+
+' Cache new data
+cert_handler --> redis_cache : Cache certificate details
+redis_cache --> redis : Store in Redis
+
+' Metrics and tracing
+cert_handler --> prometheus_metrics : Update certificate-related metrics
+prometheus_metrics --> prometheus : Expose metrics
+
+cert_handler --> tracing : Record trace data
+
+' Logging for observability
+cert_handler --> logger : Log processing activities
+
+' API responses
+cert_handler --> api : Return certificate details
+api --> client : Response with cert data
+api --> client : Error response (e.g., invalid domain, rate limited)
+@enduml

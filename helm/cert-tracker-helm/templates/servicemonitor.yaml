@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "cert-tracker.fullname" . }}-monitor
+  namespace: {{ .Values.monitoring.namespace | default "monitoring" }}
+  labels:
+    release: kind-prometheus
+spec:
+  selector:
+    matchLabels:
+      {{- include "cert-tracker.labels" . | nindent 4 }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - {{ include "cert-tracker.namespace" . }}

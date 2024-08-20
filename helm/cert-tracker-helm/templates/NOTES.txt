@@ -1,0 +1,61 @@
+######################################################################
+# cert-tracker has been successfully deployed!
+######################################################################
+
+1. **Accessing the Application**
+
+   The cert-tracker microservice has been deployed in the `{{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }}` namespace.
+
+   You can access it using the following URL:
+
+   **Note**: The ingress is disabled. To access the service, use the following command:
+
+   kubectl port-forward svc/{{ include "cert-tracker.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }} --namespace {{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }}
+
+   Then, in your browser, visit: `http://localhost:{{ .Values.service.port }}/`
+
+2. **Verifying Deployment**
+
+   Check that the cert-tracker service and its components are running correctly:
+
+   kubectl get all --namespace {{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+3. **Viewing Logs**
+
+   To view the logs of the cert-tracker deployment, use the following command:
+
+   kubectl logs -f deployment/{{ include "cert-tracker.fullname" . }} --namespace {{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }}
+
+4. **Redis Deployment**
+
+   If you have deployed Redis as part of this release, you can check its status with:
+
+   kubectl get deployment/{{ include "redis.fullname" . }} --namespace {{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }}
+
+   To view the logs of the Redis deployment, use:
+
+   kubectl logs -f deployment/{{ include "redis.fullname" . }} --namespace {{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }}
+
+5. **Running CronJobs**
+
+   Two cron jobs have been created:
+
+   - **cert-tracker**: This job checks certificates periodically.
+     Schedule: `{{ .Values.checkjob.schedule }}`
+
+   - **Redis-clear**: This job clears the Redis cache periodically.
+     Schedule: `{{ .Values.redis.schedule }}`
+
+   You can check the status of these cron jobs with:
+
+   kubectl get cronjobs --namespace {{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }}
+
+6. **Uninstallation**
+
+   To uninstall the cert-tracker release:
+
+   helm uninstall {{ .Release.Name }} --namespace {{ .Values.namespaceOverride | default (include "cert-tracker.name" .) }}
+
+   This will remove all associated resources.
+
+######################################################################

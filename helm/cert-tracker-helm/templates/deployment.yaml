@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "cert-tracker.fullname" . }}
+  namespace: {{ include "cert-tracker.namespace" . }}
+  labels:
+    {{- include "cert-tracker.labels" . | nindent 4 }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.service.port }}"
+    prometheus.io/path: "/metrics"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "cert-tracker.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "cert-tracker.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: cert-tracker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          env:
+            - name: REDIS_HOST
+              value: "{{ include "redis.fullname" . }}"
+            - name: REDIS_PORT
+              value: "{{ .Values.redis.image.port }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.probes.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.probes.livenessProbe.failureThreshold | default 3 }}
+            timeoutSeconds: {{ .Values.probes.livenessProbe.timeoutSeconds | default 1 }}
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: {{ .Values.probes.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.probes.readinessProbe.failureThreshold | default 3 }}
+            timeoutSeconds: {{ .Values.probes.readinessProbe.timeoutSeconds | default 1 }}
+          resources:
+            requests:
+              memory: "{{ .Values.resources.requests.memory }}"
+              cpu: "{{ .Values.resources.requests.cpu }}"
+            limits:
+              memory: "{{ .Values.resources.limits.memory }}"
+              cpu: "{{ .Values.resources.limits.cpu }}"
+      securityContext:
+        fsGroup: 2000
+        runAsUser: 1000
+        runAsGroup: 3000

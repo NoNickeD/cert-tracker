@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "cert-tracker.fullname" . }}-redis-clear
+  namespace: {{ include "cert-tracker.namespace" . }}
+  labels:
+    {{- include "cert-tracker.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.redis.schedule }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: redis-clear
+              image: {{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}
+              command:
+                - /bin/sh
+                - -c
+                - "redis-cli -h redis -p 6379 FLUSHALL"
+          restartPolicy: OnFailure

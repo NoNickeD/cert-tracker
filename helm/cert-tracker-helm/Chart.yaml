@@ -1,0 +1,13 @@
+apiVersion: v2
+name: cert-tracker
+description: A Helm chart for Kubernetes to deploy the cert-tracker microservice
+version: 0.1.0
+appVersion: "1.0"
+keywords:
+  - certificates
+  - tracker
+  - monitoring
+sources:
+  - "https://github.com/NoNickeD/cert-tracker.git"
+maintainers:
+  - name: Nikos Nikolakakis
